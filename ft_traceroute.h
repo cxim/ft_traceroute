@@ -19,56 +19,26 @@
 #include <time.h>
 #include <sys/time.h>
 
-typedef struct s_pack
-{
-	char 		buff[84];
-	struct iphdr	*ip;
-	struct icmphdr	*icmp;
-}				t_pack;
-
-typedef struct s_sig
-{
-	int 	sin_end;
-	int 	sin_send;
-}				t_sig;
-
-typedef struct s_time
-{
-	struct timeval start;
-	struct timeval end;
-	struct timeval	r;
-	struct timeval	s;
-	long double		rtt;
-	long double		min;
-	long double		max;
-	long double		avg;
-	long double		sum_sqrt;
-}				t_time;
-
-typedef struct s_response
-{
-	struct iovec	iovec[1];
-	struct msghdr	msghdr;
-}				t_response;
 
 typedef struct s_parametrs
 {
-	struct addrinfo *res;
-    struct sockaddr_in *sock;
-    int 	flag_v;
-    int     sock_fd;
-	t_pack pack;
-    char 	*host_name;
-    char 	addr_str[INET6_ADDRSTRLEN];
-    t_time	time;
-    t_sig sig;
-    int send;
-    int received;
-	int ttl;
+	int     sock_fd;
+	int		some_errors;
 	pid_t 	pid;
-	int 	seq;
-	t_response response;
-	int 	byte_received;
+	size_t	first_stage;
+	size_t	nb_stage_max;
+	size_t	nb_queries;
+	size_t	pack_size;
+
+	struct addrinfo *res;
+	char 	*host_name;
+	struct timeval start;
+	struct timeval end;
+	struct timeval	r;
+
+    char 	addr_host[INET_ADDRSTRLEN];
+    char 	addr_host_canonik[INET_ADDRSTRLEN];
+	char 	rev_dns[NI_MAXHOST];
 }               t_parametrs;
 
 

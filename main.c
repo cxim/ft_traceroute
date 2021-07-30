@@ -1,463 +1,244 @@
 
 #include "ft_traceroute.h"
 
-
-//void rtt_info(t_parametrs *parametrs)
-//{
-//	long double	rtt;
-//
-//	if (gettimeofday(&parametrs->time.r, NULL) < 0)
-//	{
-//		ft_putstr_fd("Error: timeofday\n", 2);
-//		exit(2);
-//	}
-//	parametrs->received++;
-//	rtt = (parametrs->time.r.tv_usec - parametrs->time.s.tv_usec) / 1000000.0;
-//	rtt += (parametrs->time.r.tv_sec - parametrs->time.s.tv_sec);
-//	rtt *= 1000.0;
-//	parametrs->time.rtt = rtt;
-//	if (rtt > parametrs->time.max)
-//		parametrs->time.max = rtt;
-//	if (parametrs->time.min == 0.0)
-//		parametrs->time.min = rtt;
-//	else if (parametrs->time.min > rtt)
-//		parametrs->time.min = rtt;
-//	parametrs->time.avg += rtt;
-//	parametrs->time.sum_sqrt += rtt * rtt;
-//}
-//
-//void init_receive_param(t_parametrs *parametrs)
-//{
-//	t_response *response;
-//
-//	response = &parametrs->response;
-//	ft_bzero((void *)parametrs->pack.buff, 84);
-//	ft_bzero(response, sizeof(t_response));
-//	response->iovec->iov_base = (void *)parametrs->pack.buff;
-//	response->iovec->iov_len = sizeof(parametrs->pack.buff);
-//	response->msghdr.msg_iov = response->iovec;
-//	response->msghdr.msg_name = NULL;
-//	response->msghdr.msg_iovlen = 1;
-//	response->msghdr.msg_namelen = 0;
-//	response->msghdr.msg_flags = MSG_DONTWAIT;
-//}
-//
-//void receive_from_host(t_parametrs *parametrs)
-//{
-//	int 	rec;
-//	struct ip *ip;
-//
-//	init_receive_param(parametrs);
-//	while (!parametrs->sig.sin_end)
-//	{
-//		rec = recvmsg(parametrs->sock_fd, &parametrs->response.msghdr, MSG_DONTWAIT);
-//		if (rec > 0)
-//		{
-//			parametrs->byte_received = rec;
-//			ip = (struct  ip*) parametrs->response.iovec->iov_base;
-//			if (parametrs->pack.icmp->type == ICMP_ECHOREPLY)
-//			{
-//				rtt_info(parametrs);
-//				if (parametrs->host_name != parametrs->addr_str)
-//					printf("%d bytes from %s (%s): icmp_seq=%d ttl=%d time=%.2Lf ms\n", parametrs->byte_received - (int) sizeof(struct iphdr), parametrs->host_name,
-//						   parametrs->addr_str, parametrs->pack.icmp->un.echo.sequence, ip->ip_ttl, parametrs->time.rtt);
-//				else
-//					printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.2Lf ms\n", parametrs->byte_received - (int) sizeof(struct iphdr),
-//						   parametrs->addr_str, parametrs->pack.icmp->un.echo.sequence, ip->ip_ttl, parametrs->time.rtt);
-//			}
-//			else if (parametrs->flag_v)
-//			{
-//				char str[50];
-//
-//				printf("%d bytes from %s: type=%d code=%d\n", parametrs->byte_received - (int) sizeof(struct iphdr),
-//					   inet_ntop(AF_INET, (void *)&parametrs->pack.ip->saddr, str, 100),
-//					   parametrs->pack.icmp->type, parametrs->pack.icmp->code);
-//			}
-//			return;
-//		}
-//	}
-//}
-//
-//unsigned short checksum(unsigned short *icmp, int len_struct)
-//{
-//	unsigned long	res;
-//
-//	res = 0;
-//	while (len_struct > 1)
-//	{
-//		res = res + *icmp++;
-//		len_struct = len_struct - sizeof(unsigned short);
-//	}
-//	if (len_struct)
-//	{
-//		res = res + *(unsigned char *)icmp;
-//	}
-//	res = (res >> 16) + (res & 0xffff);
-//	res = res + (res >> 16);
-//	return (unsigned short)(~res);
-//}
-//
-//void send_to_host(t_parametrs *parametrs)
-//{
-//	ft_bzero((void *)parametrs->pack.buff, 84);
-//	parametrs->pack.ip->version = 4;
-//	parametrs->pack.ip->protocol = IPPROTO_ICMP;
-//	parametrs->pack.ip->ttl = parametrs->ttl;
-//	parametrs->pack.ip->ihl = sizeof(*parametrs->pack.ip) >> 2;
-//	inet_pton(AF_INET, parametrs->addr_str, &parametrs->pack.ip->daddr);
-//	parametrs->pack.icmp->code = 0;
-//	parametrs->pack.icmp->type = ICMP_ECHO;
-//	parametrs->pack.icmp->un.echo.id = parametrs->pid;
-//	parametrs->pack.icmp->un.echo.sequence = parametrs->seq++;
-//	parametrs->pack.icmp->checksum = checksum((unsigned short *)parametrs->pack.icmp, sizeof(struct icmphdr));
-//	if (sendto(parametrs->sock_fd, (void *)&parametrs->pack, 84, 0, (void *)parametrs->sock, sizeof(struct sockaddr_in)) < 0)
-//	{
-//		ft_putstr_fd("Error: sendto\n", 2);
-//		exit(2);
-//	}
-//	if (gettimeofday(&parametrs->time.s, NULL) < 0)
-//	{
-//		ft_putstr_fd("Error: gettimeofday\n", 2);
-//		exit(2);
-//	}
-//	parametrs->send > 1 ? gettimeofday(&parametrs->time.start, NULL) : 0;
-//	parametrs->send++;
-//	parametrs->sig.sin_send = 0;
-//}
-
-//void get_socket_fd(t_parametrs *parametrs)
-//{
-//	int opt_val;
-//
-//	opt_val = 1;
-//	parametrs->sock_fd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
-//	if (parametrs->sock_fd == -1)
-//	{
-//		ft_putstr_fd("Socket file descriptor not received!\n", 2);
-//		exit(2);
-//	}
-//	if (setsockopt(parametrs->sock_fd, IPPROTO_IP, IP_HDRINCL, &opt_val, sizeof(int)) < 0)
-//	{
-//		ft_putstr_fd("Error: setsockopt\n", 2);
-//		exit(2);
-//	}
-//}
-
-//void ft_ping(t_parametrs *parametrs)
-//{
-//	get_socket_fd(parametrs);
-//	parametrs->sock->sin_port = htons(33434);
-//	printf("traceroute to %s (%s), %d hops max, %d byte packets\n", parametrs->host_name, parametrs->addr_str, 30, 60);
-//}
-
-void get_stat(t_parametrs *parametrs)
+void free_params(t_parametrs *parametrs)
 {
-	struct timeval start;
-	struct timeval end;
-	long double time;
-	long double mdev;
-	double loss;
-
-	gettimeofday(&parametrs->time.end, NULL);
-	start = parametrs->time.start;
-	end = parametrs->time.end;
-	loss = (parametrs->send - parametrs->received) / parametrs->send * 100.0;
-	time = (end.tv_usec - start.tv_usec) / 1000000.0;
-	time += (end.tv_sec - start.tv_sec);
-	time *= 1000.0;
-
-	parametrs->time.avg /= parametrs->send;
-	mdev = (parametrs->time.sum_sqrt / parametrs->send) - parametrs->time.avg * parametrs->time.avg;
-	mdev = sqrt(mdev);
-	ft_printf("\n--- %s ping statistics ---\n", parametrs->host_name);
-	ft_printf("%d packets transmitted, %d received, ", parametrs->send, parametrs->received);
-	printf("%.0f%% packet loss, time %.0Lfms\n", loss, time);
-	if (parametrs->time.rtt > 0.0)
-		printf("rtt min/avg/max/mdev = %.3Lf/%.3Lf/%.3Lf/%.3Lf ms\n", parametrs->time.min, parametrs->time.avg, parametrs->time.max, mdev);
+	freeaddrinfo(parametrs->res);
+	close(parametrs->sock_fd);
+	parametrs->addr_host;
+	free(parametrs);
 }
 
-//void sig_handler(int dummy)
-//{
-//	if (dummy == SIGINT)
-//	{
-//		parametrs->sig.sin_end = 1;
-//		get_stat();
-//	}
-//	if (dummy == SIGALRM)
-//		parametrs->sig.sin_send = 1;
-//}
-
-void free_params(struct addrinfo *parametrs)
-{
-	freeaddrinfo(parametrs);
-//	free(parametrs);
-}
-
-t_parametrs *init()
+t_parametrs * init()
 {
 	t_parametrs *tmp;
 	tmp = (t_parametrs*)malloc(sizeof(t_parametrs));
 	ft_bzero(tmp, sizeof(t_parametrs));
-	tmp->sock_fd = 0;
-	tmp->sig.sin_send = 0;
-	tmp->sig.sin_end = 0;
-	tmp->pack.ip = (struct iphdr *)tmp->pack.buff;
-	tmp->pack.icmp = (struct icmphdr *)(tmp->pack.ip + 1);
-	tmp->ttl = 17;
 	tmp->pid = getpid();
-	tmp->seq = 1;
-	tmp->time.min = 0.0;
-	tmp->time.max = 0.0;
-	tmp->time.sum_sqrt = 0;
-	tmp->received = 0;
+	tmp->sock_fd = 0;
+	tmp->first_stage = 1;
+	tmp->nb_stage_max = 30;
+	tmp->nb_queries = 3;
+	tmp->pack_size = 60;
+	tmp->res = NULL;
 	return tmp;
-}
-
-int get_host_info(t_parametrs *parametrs)
-{
-	struct addrinfo start;
-	struct addrinfo *res;
-
-	ft_bzero(&start, sizeof(start));
-	start.ai_family = AF_INET;
-	start.ai_socktype = SOCK_RAW;
-	start.ai_protocol = IPPROTO_ICMP;
-	if (getaddrinfo(parametrs->host_name, NULL, &start, &parametrs->res) != 0)
-		return (1);
-	parametrs->sock = (struct sockaddr_in *)parametrs->res->ai_addr;
-	return (0);
 }
 
 void get_arguments(int ac, char **av)
 {
-    int i;
-	int count;
-	int stop;
-
-	stop = 0;
-	count = 1;
-    i = 1;
-        if (ft_strcmp(av[1], "-h") == 0)
-        {
-			ft_printf("Usage: ft_traceroute [-h help] hostname\n");
-			exit(1);
-        }
-//        else
-//		{
-//			parametrs->host_name = av[i];
-//        	if (get_host_info(parametrs))
-//			{
-//				ft_putstr_fd("ft_traceroute: ", 2);
-//				ft_putstr_fd(parametrs->host_name, 2);
-//				ft_putstr_fd(": ", 2);
-//				ft_putstr_fd(" Name or service not known!!\n", 2);
-//				exit(1);
-//			}
-//        	inet_ntop(AF_INET, (void *)&parametrs->sock->sin_addr, parametrs->addr_str, INET_ADDRSTRLEN);
-//		}
+	if (ft_strcmp(av[1], "-h") == 0)
+    {
+		ft_printf("Usage: ft_traceroute [-h help] hostname\n");
+		exit(1);
+    }
 }
 
-int set_ttl_by_new_fd(int fd, int ttl)
+void create_sock(t_parametrs *parametrs)
 {
-	const int count = ttl;
-
-	if (setsockopt(fd, IPPROTO_IP, IP_TTL, &count, sizeof(count)) != 0)
+	struct timeval time_out;
+	parametrs->sock_fd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+	if (parametrs->sock_fd == -1)
 	{
-		printf("%s\n", "error setsock");
+		ft_printf("Error socket!\n");
 		exit(1);
 	}
-	return (0);
-}
-
-int init_new_fd_send()
-{
-	int fd;
-
-	if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)
+	time_out.tv_sec = 1;
+	time_out.tv_usec = 0;
+	if (setsockopt(parametrs->sock_fd, SOL_SOCKET, SO_RCVTIMEO, &time_out, sizeof(struct timeval)) != 0)
 	{
-		ft_printf("error socket create\n");
+		ft_printf("error setsocket\n");
+		free_params(parametrs);
 		exit(1);
 	}
-	return (fd);
 }
 
-int init_fd()
+void get_host_name(t_parametrs *parametrs, char *name)
 {
-	int fd;
+	void *addr;
+	struct sockaddr_in *sockaddr;
 
-	if ((fd = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0)
-	{
-		ft_printf("error socket create\n");
-		exit(1);
-	}
-	return (fd);
+	addr = parametrs->res->ai_addr;
+	sockaddr = (struct sockaddr_in*)addr;
+	addr = &(sockaddr->sin_addr);
+	inet_ntop(parametrs->res->ai_family, addr, name, parametrs->res->ai_addrlen);
 }
 
-int check_addr(struct sockaddr_in rem_addr[], int i)
+uint16_t check_sum(uint16_t *buf, size_t size)
 {
-	int tmp;
-	int res;
+	uint32_t sum;
 
-	res = 0;
-	tmp = 0;
-	while (tmp < i)
+	sum = 0;
+	while (size > 1)
 	{
-		if (rem_addr[i].sin_addr.s_addr == rem_addr[tmp].sin_addr.s_addr)
-			res++;
-		tmp++;
+		sum += *buf;
+		buf++;
+		size -= 2;
 	}
-	return (res);
+	if (size == 1)
+	{
+		sum += *(unsigned char *)buf;
+	}
+	sum = (sum >> 16) + (sum & 0xFFFF);
+	sum += (sum >> 16);
+	return ((uint16_t)~sum);
 }
 
-int output_display(char *buf, struct sockaddr_in *rem_addr, struct timeval *time_rec, struct timeval *time_start, int is_outputed_addr)
+void reverse_dns(t_parametrs *parametrs, uint32_t ip)
+{
+	struct sockaddr_in tmp;
+	socklen_t	size;
+
+	tmp.sin_family = AF_INET;
+	tmp.sin_addr.s_addr = ip;
+	size = sizeof(struct sockaddr_in);
+	if (getnameinfo((struct sockaddr *)&tmp, size, parametrs->rev_dns, NI_MAXHOST, NULL, 0, NI_NOFQDN) != 0)
+		ft_strcpy(parametrs->rev_dns, parametrs->addr_host);
+}
+
+float time_ttl(t_parametrs *parametrs)
+{
+	return ((parametrs->end.tv_usec - parametrs->start.tv_usec) / 1000.0f +
+			(parametrs->end.tv_sec - parametrs->start.tv_sec) * 1000.0f);
+}
+
+
+int check_resp(t_parametrs *parametrs, struct iphdr *iphdr, struct icmphdr *icmphdr)
 {
 	struct icmphdr *tmp;
-	double time_output;
+	char   addr_host[INET_ADDRSTRLEN];
+	char	*buf;
 
-	tmp = (struct icmphdr *)((void *)buf + sizeof(struct ip));
-	if (!is_outputed_addr)
-		ft_printf(" %s", inet_ntoa(rem_addr->sin_addr));
-
-	time_output = ((1000000 * time_rec->tv_sec + time_rec->tv_usec) - (1000000 * time_start->tv_sec + time_start->tv_usec));
-	ft_printf("  %0.003f ms", time_output / 1000);
-
-	return (0);
+	buf = (char *)icmphdr;
+	tmp = (struct icmphdr *)(buf + sizeof(struct icmphdr) + sizeof(struct iphdr));
+	if (tmp->un.echo.id == parametrs->pid)
+	{
+		inet_ntop(AF_INET, &iphdr->saddr, addr_host, INET_ADDRSTRLEN);
+		if (ft_strcmp(addr_host, parametrs->addr_host) != 0)
+		{
+			inet_ntop(AF_INET, &iphdr->saddr, parametrs->addr_host, INET_ADDRSTRLEN);
+			reverse_dns(parametrs, iphdr->saddr);
+			ft_printf(" %s (%s)", parametrs->rev_dns, parametrs->addr_host);
+		}
+		ft_printf("  %.3fms", time_ttl(parametrs));
+		if (icmphdr->type == ICMP_DEST_UNREACH)
+		{
+			ft_printf("some error\n");
+		}
+		return (0);
+	}
+	return (-1);
 }
 
-int output_stage(char buf[3][1024], struct sockaddr_in *rem_addr, struct timeval *time_rec, struct timeval *time_start)
+int get_responce(t_parametrs *parametrs)
 {
-	int i;
+	ssize_t ret;
+	struct iphdr *iphdr;
+	struct icmphdr *icmphdr;
+	char buf[128];
+	char host_addr[INET_ADDRSTRLEN];
+
+	ret = recvfrom(parametrs->sock_fd, buf, 128, 0, NULL, NULL);
+	if (ret > 0)
+	{
+		gettimeofday(&parametrs->end, NULL);
+		iphdr = (struct iphdr *)buf;
+		icmphdr = (struct icmphdr *)(buf + sizeof(struct iphdr));
+		if (icmphdr->un.echo.id != parametrs->pid)
+		{
+			inet_ntop(AF_INET, &iphdr->saddr, host_addr, INET_ADDRSTRLEN);
+			if (ft_strcmp(host_addr, parametrs->addr_host) != 0)
+			{
+				inet_ntop(AF_INET, &iphdr->saddr, parametrs->addr_host, INET_ADDRSTRLEN);
+				reverse_dns(parametrs, iphdr->saddr);
+				ft_printf(" %s (%s)", parametrs->rev_dns, parametrs->addr_host);
+			}
+			ft_printf("  %.3fms", time_ttl(parametrs));
+			if (ft_strcmp(host_addr, parametrs->addr_host_canonik) == 0)
+				return (-1);
+			return (1);
+		}
+		else
+		{
+			ret = check_resp(parametrs, iphdr, icmphdr);
+			if (ret == -1)
+				return (get_responce(parametrs));
+			return ((int)ret);
+		}
+	}
+	else
+	{
+		ft_printf(" *");
+		return (0);
+	}
+}
+
+int ping_stages(t_parametrs *parametrs)
+{
+	char *pack;
+	ssize_t ret;
+	size_t i;
+	struct icmphdr *icmphdr;
 
 	i = 0;
-	while (i < 3)
+	while (i < parametrs->nb_queries)
 	{
-		output_display(buf[i], &rem_addr[i], &time_rec[i], time_start, check_addr(rem_addr, i));
+		pack = ft_memalloc(parametrs->pack_size);
+		icmphdr = (struct icmphdr *)pack;
+		icmphdr->type = ICMP_ECHO;
+		icmphdr->un.echo.id = parametrs->pid;
+		icmphdr->un.echo.sequence = htons(1);
+		icmphdr->checksum = check_sum((uint16_t *)pack, parametrs->pack_size);
+		gettimeofday(&parametrs->start, NULL);
+		ret = sendto(parametrs->sock_fd, pack, parametrs->pack_size, 0, parametrs->res->ai_addr, sizeof(struct sockaddr_in));
+		free(pack);
+		if (ret < 1)
+		{
+			ft_printf("error sendto\n");
+			free_params(parametrs);
+			exit(1);
+		}
+		ret = get_responce(parametrs);
 		i++;
 	}
 	ft_printf("\n");
-	return (0);
+	return ((int)ret);
 }
 
-int responce(int fd)
+int traceroute(t_parametrs *parametrs)
 {
-	struct sockaddr_in remonte_addr[3];
-	int len_recv;
-	socklen_t addr_len = sizeof(remonte_addr);
-	char buf[3][1024];
-	struct timeval time_start;
-	struct timeval time_now;
-	struct timeval time_rec[3];
-	struct icmphdr *icmphdr;
-	int end = 0;
-	int rec_packets = 0;
-	int size_pack_min = sizeof(struct icmphdr) + sizeof(struct ip);
+	size_t ttl;
+	int ping;
 
-	gettimeofday(&time_start, NULL);
-	ft_bzero(buf, 1024 * 3);
-	ft_bzero(time_rec, sizeof(struct timeval) * 3);
-	ft_bzero(remonte_addr, sizeof(struct sockaddr_in) * 3);
-	while (1)
+	ttl = parametrs->first_stage;
+	create_sock(parametrs);
+	get_host_name(parametrs, parametrs->addr_host);
+	ft_strcpy(parametrs->addr_host_canonik, parametrs->addr_host);
+	ft_printf("traceroute to %s (%s), %d hops max, %d byte packets\n", parametrs->host_name, parametrs->addr_host, parametrs->nb_stage_max, parametrs->pack_size);
+	if (parametrs->first_stage > parametrs->nb_stage_max)
 	{
-		gettimeofday(&time_now, NULL);
-		if (time_now.tv_sec >= time_start.tv_sec + 5 && !end)
-		{
-			ft_printf(" %s\n", "* * *");
-			return (1);
-		}
-		len_recv = (int)recvfrom(fd, buf[rec_packets], 1024, MSG_DONTWAIT, (struct sockaddr *)&remonte_addr[rec_packets], &addr_len);
-		if (len_recv > size_pack_min)
-		{
-			gettimeofday(&time_rec[rec_packets], NULL);
-			buf[rec_packets][len_recv] = 0;
-			icmphdr = (struct icmphdr *)((void *)buf[rec_packets] + sizeof(struct ip));
-			if (icmphdr->type == ICMP_DEST_UNREACH && icmphdr->code == ICMP_PORT_UNREACH)
-			{
-				end++;
-				rec_packets++;
-			}
-			else if (icmphdr->type == ICMP_TIME_EXCEEDED && icmphdr->code == ICMP_EXC_TTL)
-			{
-				rec_packets++;
-			}
-		}
-		if (rec_packets >= 3)
-		{
-			output_stage(buf, remonte_addr, time_rec, &time_start);
-			if (end)
-				exit(1);
-			return (0);
-		}
-	}
-	return (0);
-}
-
-int loop(int sock_fd, struct sockaddr_in *serv_addr)
-{
-	int send;
-	int sended_pbh;
-	int	sended_p;
-	char buf[1024];
-	int new_fd;
-	int ttl;
-
-	sended_pbh = 0;
-	ttl = 1;
-	while (ttl <= 30)
-	{
-		sended_p = 0;
-		while (sended_p < 3)
-		{
-			if (sended_pbh == 3)
-			{
-				sended_pbh = 0;
-				ttl++;
-			}
-			while (sended_pbh < 3 && sended_p < 3)
-			{
-				ft_bzero(buf, 60);
-				new_fd = init_new_fd_send();
-				serv_addr->sin_port = htons(33434 + (ttl - 1) * 3 + sended_pbh + 1);
-				set_ttl_by_new_fd(new_fd, ttl);
-				if (sendto(new_fd, buf, 60, 0, (struct sockaddr *)serv_addr, sizeof(struct sockaddr)) < 0)
-				{
-					ft_printf("sendto fail\n");
-					exit(1);
-				}
-				close(new_fd);
-				sended_pbh++;
-				sended_p++;
-			}
-		}
-		ft_printf(" %s%d ", ((ttl < 10) ? " " : ""), ttl);
-		responce(sock_fd);
-	}
-	return (1);
-}
-
-struct sockaddr_in *get_serv_addr(char *addr)
-{
-	struct addrinfo hints;
-	struct addrinfo *res;
-
-	ft_memset(&hints, 0, sizeof(hints));
-	hints.ai_flags = 0;
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_DGRAM;
-	hints.ai_protocol = IPPROTO_UDP;
-	if (getaddrinfo(addr, 0, &hints, &res) < 0)
-	{
-		ft_printf("ft_traceroute: unknown host%s\n", addr);
+		ft_printf("error hops!\n");
 		exit(1);
 	}
-	return ((struct sockaddr_in *)res->ai_addr);
+	while (ttl <= parametrs->nb_stage_max) {
+		if (setsockopt(parametrs->sock_fd, SOL_IP, IP_TTL, &ttl, sizeof(&ttl)) != 0) {
+			ft_printf("error setsock!\n");
+			exit(1);
+		}
+		ft_printf("%2u ", ttl);
+		ping = ping_stages(parametrs);
+		if (ping < 0 || parametrs->some_errors == 1) {
+			break;
+		}
+		ttl++;
+	}
+	free_params(parametrs);
+	return 0;
 }
 
 int main(int ac, char **av)
 {
-//	t_parametrs *parametrs;
-	struct sockaddr_in *serv_addr;
-	char buf[1024];
-	int fd;
+	t_parametrs *parametrs;
+	struct addrinfo hints;
 
 	if (getuid() != 0)
 	{
@@ -469,22 +250,19 @@ int main(int ac, char **av)
 		ft_printf("Usage: ft_traceroute [-h help] hostname\n");
 		exit(1);
 	}
-//	parametrs = init();
+	parametrs = init();
 
 	get_arguments(ac, av);
-//	signal(SIGALRM, sig_handler);
-//	signal(SIGINT, sig_handler);
-//	ft_ping(parametrs);
-	fd = init_fd();
-	serv_addr = get_serv_addr(av[1]);
-	serv_addr->sin_port = htons(33434);
-	if (!inet_ntop(AF_INET, &serv_addr->sin_addr, buf, INET_ADDRSTRLEN))
-	{
-		ft_printf("Error get adress.\n");
-		exit(1);
-	}
-	ft_printf("traceroute to %s (%s), %d hops max, %d byte packets\n", av[1], buf, 30, 60);
-	loop(fd, serv_addr);
-	free_params(serv_addr);
-	return 0;
+	parametrs->host_name = av[1];
+	ft_bzero(&hints, sizeof(struct addrinfo));
+	hints.ai_flags = AI_CANONNAME;
+	hints.ai_family = AF_INET;
+	if (getaddrinfo(av[1], NULL, &hints, &parametrs->res) == -1)
+		ft_printf("error getaddrinfo\n");
+	else if (parametrs->res != NULL)
+		return traceroute(parametrs);
+	else
+		ft_printf("no host exist\n");
+	free_params(parametrs);
+	return (1);
 }
